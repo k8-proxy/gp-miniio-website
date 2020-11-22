@@ -119,27 +119,8 @@ We needed to check the website requests to check domains of interest, (domains t
 
 * Move ***k8-reverse-proxy/stable-src/ca.pem*** to your client machine and add it to your browser/system ssl trust store.
 
-## Setting up cert for proxied site
-- all domains from **ALLOWED_DOMAINS** should be added to DNS for this setup
--   ```bash 
-      docker-compose down
-    ```
-- SSH into the instance for proxied site and run
-    ```bash 
-      sudo apt update
-      sudo apt upgrade -y
-      sudo apt-get install certbot python3-certbot-nginx -y
-      sudo certbot certonly --nginx
-  ```
-- add your email and registered domains as requested
-- when successful, the following will be generated:
-       ``` 
-      /etc/letsencrypt/live/min.io.glasswall-icap.com/fullchain.pem
-      /etc/letsencrypt/live/min.io.glasswall-icap.com/privkey.pem
-       ```
-- copy contents of these files to ```full.pem``` in the nginx folder (make sure private key's content is followed by contents of fullchain)
-
 ## Access the proxied site
 
 - **Local Setup**: You can access the proxied site by browsing [min.io.glasswall-icap.com](https://min.io.glasswall-icap.com) after adding `k8-reverse-proxy/stable-src/ca.pem` to your browser/system ssl trust store.
-- **DNS Setup**: You can now access the proxied site by browsing [min.io.glasswall-icap.com](https://min.io.glasswall-icap.com), where you can verify that a valid certificate has been setup.
+
+  
