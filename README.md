@@ -34,15 +34,13 @@ We needed to check the website requests to check domains of interest, (domains t
 
 ### Configuration
 
-Use [this configuration file](https://github.com/k8-proxy/k8-reverse-proxy/blob/master/stable-src/gwproxy.env) as example
+- Tweak **gwproxy.env** according to our configuration (a pre-configured file already included in the repository), This is a variables definition example: 
 
-- `ROOT_DOMAIN`: Domain used by the proxy (example: www.gov.uk.glasswall-icap.com is proxying www.gov.uk) 
-
-- `ALLOWED_DOMAINS` : Comma separated domains accepted by the proxy, typically this should be domains of interest with the `ROOT_DOMAIN` value appended
-
-- `SQUID_IP` IP address of squid proxy, used by nginx, should be only changed on advanced usage of the docker image (example: Kubernetes)
-
-- `SUBFILTER_ENV`: Space separated text substitution rules in response body, foramtted as **match,replace** , used for url rewriting as in **.gov.uk,.gov.uk.glasswall-icap.com**
+  - `ROOT_DOMAIN`: the domain appended to the original website domain, typically: glasswall-icap.com
+  - `ALLOWED_DOMAINS` : Comma separated domains accepted by the proxy, typically this should be domains of interest (figured out in the previous step) with the `ROOT_DOMAIN` value appended
+  - `ICAP_URL` : the URL of the ICAP server either running on a docker on the same machine or through a load-balancer server.
+  - `SQUID_IP` IP address of squid proxy, used by nginx, should be only changed on advanced usage of the docker image (example: Kubernetes)
+  - `SUBFILTER_ENV`: Space separated text substitution rules in response body, formatted as **match,replace** , used for URL rewriting as in **.gov.uk,.gov.uk.glasswall-icap.com**
 
 ## Installation
 
@@ -62,13 +60,13 @@ Use [this configuration file](https://github.com/k8-proxy/k8-reverse-proxy/blob/
   
   ```bash
     git clone --recursive https://github.com/k8-proxy/k8-reverse-proxy
-    git clone https://github.com/k8-proxy/gp-engineering-website
+    git clone https://github.com/k8-proxy/gp-miniio-website
     wget https://github.com/filetrust/sdk-rebuild-eval/raw/master/libs/rebuild/linux/libglasswall.classic.so -O k8-reverse-proxy/stable-src/c-icap/Glasswall-Rebuild-SDK-Evaluation/Linux/Library/libglasswall.classic.so
-    cp -rf gp-engineering-website/* k8-reverse-proxy/stable-src/
+    cp -rf gp-miniio-website/* k8-reverse-proxy/stable-src/
     cd k8-reverse-proxy/stable-src/
   ```
 
-- Tweak `openssl.cnf` to include domains of interest in **alt_names** section & tweak the **ALLOWED_DOMAINS** & **SUBFILTER_ENV** in `gwproxy.env` 
+- Tweak `openssl.cnf` to include domains of interest in **alt_names** section (by default, this file is pre-configured in the repository)
 
 - Generate new SSL credentials
   
@@ -83,41 +81,46 @@ Use [this configuration file](https://github.com/k8-proxy/k8-reverse-proxy/blob/
     docker-compose up -d --build
   ```
   
-  You will need to use this command after every change to any of the configuration files **gwproxy.env**, **subfilter.sh**, **docker-compose.yaml**, if any.
+  From now on, you will need to use this command after every change to any of the configuration files **gwproxy.env**, **subfilter.sh**, **docker-compose.yaml**, if any.
+  
+  ## Troubleshooting
+
+  Check if docker service is active   
+  
+  ```bash
+    systemctl status docker
+  ```
+  
+  Check if containers are up and running (not Restarting...)
+  
+  ```bash
+  docker-compose ps
+  ```
+  
+  If squid or nginx is not started correctly, then configuration parameters in `gwproxy.env` has been modified, execute:
+  
+  ```bash
+  docker-compose up -d --force-recreate
+  ```
+  
+  
   
   ## Client configuration
-
+  
 - Add hosts records to your client system hosts file ( i.e **Windows**: C:\Windows\System32\drivers\etc\hosts , **Linux, macOS and  Unix-like:** /etc/hosts ) as follows
   
   ```
   127.0.0.1 min.io.glasswall-icap.com slack.min.io.glasswall-icap.com blog.min.io.glasswall-icap.com dl.min.io.glasswall-icap.com docs.min.io.glasswall-icap.com
   ```
   
-  In case the machine running the project is not your local computer, replace **127.0.0.1** with the project host IP,
+  In case you are using a client other than machine running the project , replace **127.0.0.1** with the project host machine IP,
   
   make sure that tcp ports **80** and **443** are reachable and not blocked by firewall.
-  
-  ## Setting up cert for proxied site
-  - all domains from **ALLOWED_DOMAINS** should be added to DNS for this setup
-  -   ```bash 
-        docker-compose down
-        ```
-  - SSH into the instance for proxied site and run
-      ```bash 
-        sudo apt update
-        sudo apt upgrade -y
-        sudo apt-get install certbot python3-certbot-nginx -y
-        sudo certbot certonly --nginx
-    ```
-  - add your email and registered domains as requested
-  - when successful, the following will be generated:
-         ``` 
-        /etc/letsencrypt/live/min.io.glasswall-icap.com/fullchain.pem
-        /etc/letsencrypt/live/min.io.glasswall-icap.com/privkey.pem
-        ```
-  - copy contents of these files to ```full.pem``` in the nginx folder (make sure private key's content is followed by contents of fullchain)
 
-  ## Access the proxied site
+* Move ***k8-reverse-proxy/stable-src/ca.pem*** to your client machine and add it to your browser/system ssl trust store.
+
+## Access the proxied site
+
+- **Local Setup**: You can access the proxied site by browsing [min.io.glasswall-icap.com](https://min.io.glasswall-icap.com) after adding `k8-reverse-proxy/stable-src/ca.pem` to your browser/system ssl trust store.
+
   
-  - **Local Setup**: You can access the proxied site by browsing [min.io.glasswall-icap.com](https://min.io.glasswall-icap.com) after adding `k8-reverse-proxy/stable-src/ca.pem` to your browser/system ssl trust store.
-  - **DNS Setup**: You can now access the proxied site by browsing [min.io.glasswall-icap.com](https://min.io.glasswall-icap.com), where you can verify that a valid certificate has been setup.
